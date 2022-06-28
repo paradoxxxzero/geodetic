@@ -1,0 +1,22 @@
+{
+  "name": "revival",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "eslint": "^8.18.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-prettier": "^4.1.0",
+    "prettier": "^2.7.1",
+    "vite": "^2.9.9"
+  },
+  "dependencies": {
+    "interactjs": "^1.10.14",
+    "three": "^0.141.0"
+  }
+}
