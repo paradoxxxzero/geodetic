@@ -14,6 +14,8 @@ export const makeSurface = () => {
   const material = new MeshLambertMaterial({
     side: DoubleSide,
     color: 0x990022,
+    transparent: true,
+    opacity: 0.05,
     wireframe: true,
   })
 

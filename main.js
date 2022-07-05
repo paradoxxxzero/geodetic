@@ -1,21 +1,31 @@
 import { Vector2 } from 'three'
 
 import interact from 'interactjs'
-import { box, curvatureTranslate, xy } from './math'
+import { curvatureTranslate, xy, getPoints } from './math'
 import { initialize3d } from './render'
 import './style.css'
 import { makeSurface } from './surface'
 import { createBox, updateBox } from './box'
+import { createLink, updateLink } from './link'
+import { interactions } from './interact'
 
 const { scene, camera, controls, raycaster, renderer } = initialize3d()
 const surface = makeSurface()
-scene.add(surface)
+surface.scale.set(0.99, 0.99)
+// scene.add(surface)
+
 const boxes = [
-  box(xy([0, 0]), 2, 1, [0.5, 0.75, 0]),
-  box(xy([0.4, 2]), 2, 1, [0.15, 0.5, 0.6]),
-  box(xy([1, -1.5]), 1, 0.75, [0.8, 0.5, 0.2]),
-  box(xy([-2, -2]), 3, 2, [0.5, 0, 0.9]),
-  box(xy([-2, 5]), 3, 2, [0.5, 0.7, 0.9]),
+  { text: 'LqgL', center: xy([0, 0]), color: [0.5, 0.75, 0] },
+  { text: 'Foo', center: xy([0.4, 2]), color: [0.15, 0.5, 0.6] },
+  { text: 'Bar', center: xy([1, -1.5]), color: [0.8, 0.5, 0.2] },
+  { text: 'Hello World', center: xy([-2, -2]), color: [0.5, 0, 0.9] },
+  { text: '—<>[]^±−÷×', center: xy([-2, 5]), color: [0.5, 0.7, 0.9] },
+]
+
+const links = [
+  { boxes: [boxes[0], boxes[1]] },
+  { boxes: [boxes[2], boxes[4]] },
+  { boxes: [boxes[3], boxes[1]] },
 ]
 
 // const boxres = 100
@@ -44,8 +54,14 @@ boxes.forEach(box => {
   scene.add(box.line)
 })
 
+links.forEach(link => {
+  createLink(link)
+  scene.add(link.line)
+})
+
 const update = () => {
   boxes.forEach(updateBox)
+  links.forEach(updateLink)
 }
 
 const render = () => {
@@ -82,63 +98,6 @@ const size = () => {
 window.ondeviceorientation = window.onresize = size
 size()
 
-const translate = d => {
-  boxes.forEach(({ points }) => {
-    points.forEach(point => curvatureTranslate(point, d))
-  })
-}
-
-controls.enabled = false
-
-interact('#c3d')
-  .draggable({
-    inertia: true,
-    listeners: {
-      move: e => {
-        if (!controls.enabled) {
-          const s = Math.min(window.innerWidth, window.innerHeight) * 0.9
-          translate([e.dx / s, -e.dy / s])
-          render()
-        }
-      },
-      end: () => {},
-    },
-  })
-  // .on('tap', e => {
-  //   const p = new Vector2()
-  //   p.x = 1 - (2 * e.x) / window.innerWidth
-  //   p.y = 1 - (2 * e.y) / window.innerHeight
-
-  //   raycaster.setFromCamera(p, camera)
-  //   raycaster.intersectObject(hyperboloid).forEach(({ point }) => {
-  //     console.log(point.toArray(), project(point.toArray()))
-  //   })
-  // })
-  .on('doubletap', e => {
-    const p = new Vector2()
-    p.x = 1 - (2 * e.x) / window.innerWidth
-    p.y = 1 - (2 * e.y) / window.innerHeight
-
-    raycaster.setFromCamera(p, camera)
-    raycaster.intersectObject(surface).forEach(({ point }) => {
-      const newBox = box([point.x, point.y, point.z], 0.5, 0.3, [
-        Math.random(),
-        Math.random(),
-        Math.random(),
-      ])
-      createBox(newBox)
-      scene.add(newBox.mesh)
-      scene.add(newBox.line)
-      boxes.push(newBox)
-    })
-    render()
-  })
-
-addEventListener('keydown', e => {
-  if (e.code == 'Tab') {
-    controls.enabled = !controls.enabled
-  }
-})
-
+interactions(boxes, links, raycaster, render, controls, camera, scene, surface)
 window.boxes = boxes
 window.render = render

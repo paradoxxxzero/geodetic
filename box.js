@@ -3,26 +3,27 @@ import {
   BufferAttribute,
   StreamDrawUsage,
   DoubleSide,
-  MeshLambertMaterial,
   LineBasicMaterial,
   LineSegments,
   Mesh,
   Color,
+  MeshBasicMaterial,
+  CanvasTexture,
 } from 'three'
-import { curve } from './math'
+import { curve, getPoints } from './math'
 export const createBox = box => {
-  const MAX = 30000
+  const MAX = 100000
 
   const positions = new Float32Array(3 * MAX)
-  const normals = new Float32Array(3 * MAX)
+  const uvs = new Float32Array(2 * MAX)
   const geometry = new BufferGeometry()
   geometry.setAttribute(
     'position',
     new BufferAttribute(positions, 3).setUsage(StreamDrawUsage)
   )
   geometry.setAttribute(
-    'normal',
-    new BufferAttribute(normals, 3).setUsage(StreamDrawUsage)
+    'uv',
+    new BufferAttribute(uvs, 2).setUsage(StreamDrawUsage)
   )
 
   const linePositions = new Float32Array(3 * MAX)
@@ -32,18 +33,50 @@ export const createBox = box => {
     new BufferAttribute(linePositions, 3).setUsage(StreamDrawUsage)
   )
 
-  const material = new MeshLambertMaterial({
+  const canvas = document.createElement('canvas')
+  if (box.text === 'LoL') {
+    canvas.style = 'position: absolute'
+    document.body.append(canvas)
+  }
+  const fs = 80
+  const ff = 'serif'
+  const margin = 1.2
+  const boxRatio = 0.003
+
+  const ctx = canvas.getContext('2d')
+  ctx.font = `${fs}px ${ff}`
+  const metrics = ctx.measureText(box.text)
+  const width = metrics.width
+  const height = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent
+
+  canvas.width = width * margin
+  canvas.height = height * margin
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+  ctx.font = `${fs}px ${ff}`
+
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillStyle = '#000'
+  ctx.fillText(box.text, canvas.width / 2, canvas.height / 2)
+  if (box.text === 'LoL') {
+    console.log(metrics, ctx.measureText(box.text))
+  }
+  const material = new MeshBasicMaterial({
     side: DoubleSide,
-    transparent: true,
-    opacity: 0.9,
+    // transparent: true,
+    // opacity: 0.9,
     color: new Color().fromArray(box.color),
+    map: new CanvasTexture(canvas),
     // wireframe: true,
   })
+  material.map.needsUpdate = true
   const lineMaterial = new LineBasicMaterial({
     transparent: true,
     opacity: 0.9,
     linewidth: 4,
-    color: new Color().fromArray(box.color),
+    color: new Color('#000000'),
   })
 
   const boxMesh = new Mesh(geometry, material)
@@ -51,16 +84,19 @@ export const createBox = box => {
   boxLine.scale.setScalar(0.999)
   boxMesh.add(boxLine)
 
+  box.width = width * boxRatio
+  box.height = height * boxRatio
+  box.points = getPoints(box.center, box.width, box.height)
   box.mesh = boxMesh
   box.line = boxLine
   updateBox(box)
 }
 
 export const updateBox = box => {
-  const { mesh, line } = box
+  const { mesh, line, points } = box
 
   const positions = mesh.geometry.attributes.position.array
-  const normals = mesh.geometry.attributes.normal.array
+  const uvs = mesh.geometry.attributes.uv.array
   const linePositions = line.geometry.attributes.position.array
 
   const p = 0.05
@@ -68,7 +104,7 @@ export const updateBox = box => {
   let linePos = 0
   const index = []
   const lineIndex = []
-  const { points } = box
+
   const [p1, p2, p3, p4] = points
 
   const p1p2 = curve(p1, p2, p)
@@ -100,19 +136,14 @@ export const updateBox = box => {
     const startPos = pos
     for (let j = 0; j < pco.length; j++) {
       const [xi, yi, zi] = pco[j]
+      uvs[pos * 2 + 1] = 1 - i / (p1p2.length - 1)
+      uvs[pos * 2] = 1 - j / (pco.length - 1)
       positions[pos * 3] = xi
       positions[pos * 3 + 1] = yi
       positions[pos * 3 + 2] = zi
       if (i !== 0 && pos > startPos) {
-        // normals[pos * 3] = positions[(pos - len - 1) * 3]
-        // normals[pos * 3 + 1] = positions[(pos - len - 1) * 3 + 1]
-        // normals[pos * 3 + 2] = positions[(pos - len - 1) * 3 + 2]
         index.push(pos - len - 1, pos - 1, pos - len)
         index.push(pos - len, pos - 1, pos)
-      } else {
-        normals[pos * 3] = 0
-        normals[pos * 3 + 1] = 0
-        normals[pos * 3 + 2] = 0
       }
       pos++
     }
@@ -121,12 +152,16 @@ export const updateBox = box => {
   mesh.geometry.setIndex(index)
   mesh.geometry.setDrawRange(0, index.length)
   mesh.geometry.attributes.position.needsUpdate = true
-  mesh.geometry.attributes.normal.needsUpdate = true
-  mesh.geometry.computeVertexNormals()
+  // mesh.geometry.computeVertexNormals()
   // mesh.geometry.computeBoundingSphere()
 
   line.geometry.setIndex(lineIndex)
   line.geometry.setDrawRange(0, lineIndex.length)
   line.geometry.attributes.position.needsUpdate = true
   // line.geometry.computeBoundingSphere()
+
+  line.material.color = box.selected
+    ? new Color('#ff0000')
+    : new Color('#000000')
+  line.material.needsUpdate = true
 }

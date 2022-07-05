@@ -25,19 +25,16 @@ export const curvatureTranslate = (vertex, offset) => {
   return vertex
 }
 
-export const box = (center, width, height, color) => {
+export const getPoints = (center, width, height) => {
   const w2 = width / 2
   const h2 = height / 2
 
-  return {
-    points: [
-      curvatureTranslate(xy([-w2, h2]), center),
-      curvatureTranslate(xy([w2, h2]), center),
-      curvatureTranslate(xy([w2, -h2]), center),
-      curvatureTranslate(xy([-w2, -h2]), center),
-    ],
-    color,
-  }
+  return [
+    curvatureTranslate(xy([-w2, h2]), center),
+    curvatureTranslate(xy([-w2, -h2]), center),
+    curvatureTranslate(xy([w2, -h2]), center),
+    curvatureTranslate(xy([w2, h2]), center),
+  ]
 }
 
 // export const hyperbolicDistance = ([x1, y1], [x2, y2]) =>
@@ -51,7 +48,7 @@ export const box = (center, width, height, color) => {
 export const hyperbolicTranslate = (vertex, offset) => {
   const [xe, ye, ze] = vertex
   let [xt, yt] = offset
-  xt *= Math.tanh(1 / Math.abs(yt))
+  xt *= -Math.tanh(1 / Math.abs(yt))
 
   const cxt = Math.cosh(Math.asinh(xt))
   const cyt = Math.cosh(Math.asinh(yt))
