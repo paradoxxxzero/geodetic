@@ -11,7 +11,8 @@ import {
   CanvasTexture,
 } from 'three'
 import { curve, getPoints } from './math'
-import { makeTextTexture } from './render'
+import { makeTextTexture, scene } from './render'
+import { boxes } from './objects'
 
 const BOX_PRECISION = 1 / 20
 
@@ -30,7 +31,7 @@ export const createBox = box => {
   const p3p4 = curve(p3, p4, BOX_PRECISION)
   const p4p1 = curve(p4, p1, BOX_PRECISION)
   const p4p3 = [...p3p4].reverse()
-  const nb = p1p2.concat(p2p3).concat(p3p4).concat(p4p1).length
+  const nb = p1p2.concat(p2p3).concat(p3p4).concat(p4p1).length + 1
   const n = p1p2
     .map((pi, i) => curve(pi, p4p3[i], BOX_PRECISION).length)
     .reduce((a, b) => a + b, 0)
@@ -58,6 +59,8 @@ export const createBox = box => {
     side: DoubleSide,
     color: new Color().fromArray(box.color),
     map: new CanvasTexture(canvas),
+    transparent: true,
+    opacity: 0.5,
     // wireframe: true,
   })
   material.map.needsUpdate = true
@@ -113,6 +116,12 @@ export const updateBox = box => {
   }
   lineIndex.push(linePos - 1, startLinePos)
 
+  // linePositions[linePos * 3] = center[0]
+  // linePositions[linePos * 3 + 1] = center[1]
+  // linePositions[linePos * 3 + 2] = center[2]
+
+  // lineIndex.push(startLinePos, linePos)
+
   for (let i = 0; i < p1p2.length; i++) {
     const pi = p1p2[i]
     const co = p4p3[i]
@@ -151,20 +160,20 @@ export const updateBox = box => {
   line.material.needsUpdate = true
 }
 
-export const addBox = (boxes, scene, box) => {
+export const addBox = box => {
   createBox(box)
   scene.add(box.mesh)
   scene.add(box.line)
   boxes.push(box)
 }
 
-export const removeBox = (boxes, scene, box) => {
+export const removeBox = box => {
   scene.remove(box.mesh)
   scene.remove(box.line)
   boxes.splice(boxes.indexOf(box), 1)
 }
 
-export const changeBoxText = (scene, box, text) => {
+export const changeBoxText = (box, text) => {
   scene.remove(box.mesh)
   scene.remove(box.line)
   box.text = text

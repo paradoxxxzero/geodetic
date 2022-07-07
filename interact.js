@@ -2,27 +2,22 @@ import interact from 'interactjs'
 import { Vector2 } from 'three'
 import { addBox, removeBox, changeBoxText } from './box'
 import { addLink, removeLink } from './link'
-import { curvatureTranslate, getPoints } from './math'
+import { curvatureRotate, getPoints, setCurvature, curvature } from './math'
+import { camera, controls, raycaster, render, reset } from './render'
+import { boxes, links } from './objects'
+import { surface } from './surface'
 
-export const interactions = (
-  boxes,
-  links,
-  raycaster,
-  render,
-  controls,
-  camera,
-  scene,
-  surface
-) => {
-  const translate = d => {
+export const interactions = () => {
+  const rotate = d => {
     const all = boxes.every(box => !box.selected)
     boxes.forEach(({ points, center, selected }) => {
       if (all || selected) {
-        points.forEach(point => curvatureTranslate(point, d))
-        curvatureTranslate(center, d)
+        points.forEach(point => curvatureRotate(point, d))
+        curvatureRotate(center, d)
       }
     })
   }
+  window.rotate = rotate
 
   const select = (x, y, shiftKey, ctrlKey, noUnselect) => {
     const p = new Vector2()
@@ -61,7 +56,7 @@ export const interactions = (
           const r = e.ctrlKey ? 0.5 : e.altKey ? 0.25 : 1
           if (!controls.enabled) {
             const s = Math.min(window.innerWidth, window.innerHeight) * 0.9 * r
-            translate([-e.dx / s, -e.dy / s])
+            rotate([-e.dx / s, -e.dy / s])
             render()
           }
         },
@@ -69,6 +64,16 @@ export const interactions = (
       },
     })
     .on('tap', e => {
+      if (e.altKey) {
+        const p = new Vector2()
+        p.x = (2 * e.x) / window.innerWidth - 1
+        p.y = 1 - (2 * e.y) / window.innerHeight
+        raycaster.setFromCamera(p, camera)
+        raycaster.intersectObject(surface).forEach(({ point }) => {
+          console.log(point.x, point.y, point.z)
+        })
+        return
+      }
       select(e.x, e.y, e.shiftKey, e.ctrlKey)
       render()
     })
@@ -88,14 +93,14 @@ export const interactions = (
         if (!text) {
           return
         }
-        changeBoxText(scene, box, text)
+        changeBoxText(box, text)
       } else {
         raycaster.intersectObject(surface).forEach(({ point }) => {
           const text = prompt('Text for new box?')
           if (!text) {
             return
           }
-          addBox(boxes, scene, {
+          addBox({
             text,
             center: [point.x, point.y, point.z],
             color: [Math.random(), Math.random(), Math.random()],
@@ -136,7 +141,7 @@ export const interactions = (
           }
           return acc
         }, [])
-        pairs.forEach(pair => addLink(links, scene, { boxes: pair }))
+        pairs.forEach(pair => addLink({ boxes: pair }))
         render()
       }
     } else if (e.key === 'u') {
@@ -146,7 +151,7 @@ export const interactions = (
       if (selected.length > 1) {
         links
           .filter(link => link.boxes.every(box => selected.includes(box)))
-          .forEach(link => removeLink(links, scene, link))
+          .forEach(link => removeLink(link))
         render()
       }
     } else if (e.key === 'r') {
@@ -156,14 +161,19 @@ export const interactions = (
         box.points = getPoints(box.center, box.width, box.height)
       })
       render()
+    } else if (e.key === 'v') {
+      // V -> Change curvature -1 -> 0 -> 1 -> -1
+      setCurvature(curvature === -1 ? 0 : curvature === 0 ? 1 : -1)
+      reset()
+      render()
     } else if (e.code === 'Delete') {
       // Delete -> Remove all selected boxes (and links)
       const selected = boxes.filter(box => box.selected)
       selected.forEach(box => {
         links
           .filter(link => link.boxes.includes(box))
-          .forEach(link => removeLink(links, scene, link))
-        removeBox(boxes, scene, box)
+          .forEach(link => removeLink(link))
+        removeBox(box)
       })
       render()
     }

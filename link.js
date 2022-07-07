@@ -7,8 +7,10 @@ import {
   LineSegments,
 } from 'three'
 import { curve } from './math'
+import { scene } from './render'
+import { links } from './objects'
 
-const LINK_PRECISION = 1 / 100
+const LINK_PRECISION = 1 / 500
 
 export const createLink = link => {
   const n = curve(
@@ -69,13 +71,13 @@ export const updateLink = link => {
   line.material.needsUpdate = true
 }
 
-export const addLink = (links, scene, link) => {
+export const addLink = link => {
   createLink(link)
   scene.add(link.line)
   links.push(link)
 }
 
-export const removeLink = (links, scene, link) => {
+export const removeLink = link => {
   scene.remove(link.line)
   links.splice(links.indexOf(link), 1)
 }

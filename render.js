@@ -1,19 +1,23 @@
 import {
-  AmbientLight,
   Color,
   PerspectiveCamera,
-  PointLight,
   Raycaster,
   Scene,
   WebGLRenderer,
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
-import { curvature } from './math'
+import { createBox, updateBox } from './box'
+import { createLink, updateLink } from './link'
+import { boxes, links } from './objects'
 import './style.css'
+import { createSurface, surface } from './surface'
+import { xy } from './math'
+
+export let renderer, camera, scene, raycaster, controls
 
 export const initialize3d = () => {
-  const renderer = new WebGLRenderer({
+  renderer = new WebGLRenderer({
     antialias: true,
   })
 
@@ -24,36 +28,34 @@ export const initialize3d = () => {
   renderer.domElement.id = 'c3d'
   document.body.appendChild(renderer.domElement)
 
-  const camera = new PerspectiveCamera(
+  camera = new PerspectiveCamera(
     90,
     window.innerWidth / window.innerHeight,
     0.01,
     1000
   )
-  camera.position.set(0, 0, -1)
+  camera.position.set(0, 0, -0.99)
   camera.up.set(0, 1, 0)
   camera.lookAt(0, 0, 10)
   camera.zoom = Math.min(1, window.innerWidth / window.innerHeight)
   camera.updateProjectionMatrix()
 
-  const raycaster = new Raycaster()
+  raycaster = new Raycaster()
 
-  const scene = new Scene()
+  scene = new Scene()
   scene.background = new Color(0xffffff)
 
-  const ambientLight = new AmbientLight(0xffffff)
-  scene.add(ambientLight)
+  // const ambientLight = new AmbientLight(0xffffff)
+  // scene.add(ambientLight)
 
-  const pointLight = new PointLight(0xffffff, 1)
-  // pointLight.position.set(2, 2, 2)
-  camera.add(pointLight)
-  camera.fov = 90
-  camera.position.set(0, 0, (curvature || -1) * 0.99)
-  camera.updateProjectionMatrix()
+  // const pointLight = new PointLight(0xffffff, 1)
+  // // pointLight.position.set(2, 2, 2)
+  // camera.add(pointLight)
+  // camera.updateProjectionMatrix()
 
   scene.add(camera)
 
-  const controls = new OrbitControls(camera, renderer.domElement)
+  controls = new OrbitControls(camera, renderer.domElement)
   controls.target.set(0, 0, 0)
   controls.minDistance = 0
   controls.maxDistance = 100
@@ -95,3 +97,46 @@ export const makeTextTexture = text => {
   ctx.fillText(text, canvas.width / 2, canvas.height / 2)
   return { canvas, width: canvas.width, height: canvas.height }
 }
+
+export const render = () => {
+  update()
+  renderer.render(scene, camera)
+}
+
+export const update = () => {
+  boxes.forEach(updateBox)
+  links.forEach(updateLink)
+}
+
+export const set = () => {
+  createSurface()
+  scene.add(surface)
+  boxes.forEach(box => {
+    createBox(box)
+    scene.add(box.mesh)
+    scene.add(box.line)
+  })
+
+  links.forEach(link => {
+    createLink(link)
+    scene.add(link.line)
+  })
+}
+export const reset = () => {
+  scene.remove(surface)
+  boxes.forEach(box => {
+    scene.remove(box.mesh)
+    scene.remove(box.line)
+  })
+
+  links.forEach(link => {
+    scene.remove(link.line)
+  })
+
+  boxes.forEach(box => {
+    box.center = xy(box.center)
+  })
+  set()
+}
+
+window.render = render

@@ -9,7 +9,10 @@ import {
 } from 'three'
 import { curvature, xy } from './math'
 
-export const makeSurface = () => {
+export let surface
+
+export const createSurface = () => {
+  const res = 100
   let geometry
   const material = new MeshLambertMaterial({
     side: DoubleSide,
@@ -22,14 +25,13 @@ export const makeSurface = () => {
   if (curvature > 0) {
     geometry = new SphereGeometry(1)
   } else if (curvature < 0) {
-    const res = 100
     const hyperboloidPositions = new Float32Array(3 * res * res)
     const index = []
     for (let i = 0; i < res; i++) {
       for (let j = 0; j < res; j++) {
         const x = i - res / 2
         const y = j - res / 2
-        const z = xy([x, y])[2]
+        const z = Math.sqrt(x * x + y * y + 1)
         hyperboloidPositions[3 * (i * res + j)] = x
         hyperboloidPositions[3 * (i * res + j) + 1] = y
         hyperboloidPositions[3 * (i * res + j) + 2] = z
@@ -51,11 +53,14 @@ export const makeSurface = () => {
     geometry.setDrawRange(0, index.length)
     geometry.computeVertexNormals()
   } else {
-    geometry = new PlaneGeometry(50, 50)
+    geometry = new PlaneGeometry(res, res, res, res)
 
-    for (let i = 2; i < geometry.attributes.position.length; i += 3) {
-      geometry.attributes.position[i] = 1
+    for (let i = 2; i < geometry.attributes.position.array.length; i += 3) {
+      geometry.attributes.position.array[i] = 1
     }
   }
-  return new Mesh(geometry, material)
+  geometry.computeBoundingSphere()
+  surface = new Mesh(geometry, material)
+  surface.scale.set(0.99, 0.99)
+  return surface
 }
