@@ -1,4 +1,4 @@
-export let curvature = 1
+export let curvature = -1
 
 export const setCurvature = c => {
   curvature = c
