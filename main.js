@@ -1,13 +1,10 @@
-import { Vector2 } from 'three'
-
-import interact from 'interactjs'
-import { curvatureTranslate, xy, getPoints } from './math'
+import { createBox, updateBox } from './box'
+import { interactions } from './interact'
+import { createLink, updateLink } from './link'
+import { xy } from './math'
 import { initialize3d } from './render'
 import './style.css'
 import { makeSurface } from './surface'
-import { createBox, updateBox } from './box'
-import { createLink, updateLink } from './link'
-import { interactions } from './interact'
 
 const { scene, camera, controls, raycaster, renderer } = initialize3d()
 const surface = makeSurface()

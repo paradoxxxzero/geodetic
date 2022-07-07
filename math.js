@@ -1,4 +1,4 @@
-export let curvature = -1
+export let curvature = 1
 export const setCurvature = c => {
   curvature = c
 }
@@ -50,8 +50,8 @@ export const hyperbolicTranslate = (vertex, offset) => {
   let [xt, yt] = offset
   xt *= -Math.tanh(1 / Math.abs(yt))
 
-  const cxt = Math.cosh(Math.asinh(xt))
-  const cyt = Math.cosh(Math.asinh(yt))
+  const cxt = Math.sqrt(1 + xt * xt) // Math.cosh(Math.asinh(xt))
+  const cyt = Math.sqrt(1 + yt * yt) // Math.cosh(Math.asinh(yt))
   const a = xe
   const b = ye * yt + ze * cyt
 
@@ -78,7 +78,7 @@ const parabolicTranslate = (vertex, offset) => {
   let [xe, ye] = vertex
   const [xt, yt] = offset
 
-  vertex[0] = xe - xt
+  vertex[0] = xe + xt
   vertex[1] = ye + yt
 }
 

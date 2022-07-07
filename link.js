@@ -8,10 +8,16 @@ import {
 } from 'three'
 import { curve } from './math'
 
-export const createLink = link => {
-  const MAX = 10000
+const LINK_PRECISION = 1 / 100
 
-  const positions = new Float32Array(3 * MAX)
+export const createLink = link => {
+  const n = curve(
+    link.boxes[0].center,
+    link.boxes[0].center,
+    LINK_PRECISION
+  ).length
+
+  const positions = new Float32Array(3 * n)
   const geometry = new BufferGeometry()
   geometry.setAttribute(
     'position',
@@ -34,13 +40,12 @@ export const updateLink = link => {
 
   const positions = line.geometry.attributes.position.array
 
-  const p = 0.05
   let pos = 0
   const index = []
   const p1 = boxes[0].center
   const p2 = boxes[1].center
 
-  const p1p2 = curve(p1, p2, p)
+  const p1p2 = curve(p1, p2, LINK_PRECISION)
 
   for (let i = 0; i < p1p2.length; i++) {
     const [x, y, z] = p1p2[i]
@@ -62,4 +67,15 @@ export const updateLink = link => {
     ? new Color('#ff0000')
     : new Color('#000000')
   line.material.needsUpdate = true
+}
+
+export const addLink = (links, scene, link) => {
+  createLink(link)
+  scene.add(link.line)
+  links.push(link)
+}
+
+export const removeLink = (links, scene, link) => {
+  scene.remove(link.line)
+  links.splice(links.indexOf(link), 1)
 }

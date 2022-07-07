@@ -11,11 +11,32 @@ import {
   CanvasTexture,
 } from 'three'
 import { curve, getPoints } from './math'
-export const createBox = box => {
-  const MAX = 100000
+import { makeTextTexture } from './render'
 
-  const positions = new Float32Array(3 * MAX)
-  const uvs = new Float32Array(2 * MAX)
+const BOX_PRECISION = 1 / 20
+
+export const createBox = box => {
+  const { canvas, width, height } = makeTextTexture(box.text)
+  const boxRatio = 0.001
+  box.width = width * boxRatio
+  box.height = height * boxRatio
+  box.points = getPoints(box.center, box.width, box.height)
+
+  const { points } = box
+  const [p1, p2, p3, p4] = points
+
+  const p1p2 = curve(p1, p2, BOX_PRECISION)
+  const p2p3 = curve(p2, p3, BOX_PRECISION)
+  const p3p4 = curve(p3, p4, BOX_PRECISION)
+  const p4p1 = curve(p4, p1, BOX_PRECISION)
+  const p4p3 = [...p3p4].reverse()
+  const nb = p1p2.concat(p2p3).concat(p3p4).concat(p4p1).length
+  const n = p1p2
+    .map((pi, i) => curve(pi, p4p3[i], BOX_PRECISION).length)
+    .reduce((a, b) => a + b, 0)
+
+  const positions = new Float32Array(3 * n)
+  const uvs = new Float32Array(2 * n)
   const geometry = new BufferGeometry()
   geometry.setAttribute(
     'position',
@@ -26,47 +47,15 @@ export const createBox = box => {
     new BufferAttribute(uvs, 2).setUsage(StreamDrawUsage)
   )
 
-  const linePositions = new Float32Array(3 * MAX)
+  const linePositions = new Float32Array(3 * nb)
   const lineGeometry = new BufferGeometry()
   lineGeometry.setAttribute(
     'position',
     new BufferAttribute(linePositions, 3).setUsage(StreamDrawUsage)
   )
 
-  const canvas = document.createElement('canvas')
-  if (box.text === 'LoL') {
-    canvas.style = 'position: absolute'
-    document.body.append(canvas)
-  }
-  const fs = 80
-  const ff = 'serif'
-  const margin = 1.2
-  const boxRatio = 0.003
-
-  const ctx = canvas.getContext('2d')
-  ctx.font = `${fs}px ${ff}`
-  const metrics = ctx.measureText(box.text)
-  const width = metrics.width
-  const height = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent
-
-  canvas.width = width * margin
-  canvas.height = height * margin
-  ctx.fillStyle = '#ffffff'
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-  ctx.font = `${fs}px ${ff}`
-
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillStyle = '#000'
-  ctx.fillText(box.text, canvas.width / 2, canvas.height / 2)
-  if (box.text === 'LoL') {
-    console.log(metrics, ctx.measureText(box.text))
-  }
   const material = new MeshBasicMaterial({
     side: DoubleSide,
-    // transparent: true,
-    // opacity: 0.9,
     color: new Color().fromArray(box.color),
     map: new CanvasTexture(canvas),
     // wireframe: true,
@@ -84,9 +73,6 @@ export const createBox = box => {
   boxLine.scale.setScalar(0.999)
   boxMesh.add(boxLine)
 
-  box.width = width * boxRatio
-  box.height = height * boxRatio
-  box.points = getPoints(box.center, box.width, box.height)
   box.mesh = boxMesh
   box.line = boxLine
   updateBox(box)
@@ -99,7 +85,6 @@ export const updateBox = box => {
   const uvs = mesh.geometry.attributes.uv.array
   const linePositions = line.geometry.attributes.position.array
 
-  const p = 0.05
   let pos = 0
   let linePos = 0
   const index = []
@@ -107,10 +92,10 @@ export const updateBox = box => {
 
   const [p1, p2, p3, p4] = points
 
-  const p1p2 = curve(p1, p2, p)
-  const p2p3 = curve(p2, p3, p)
-  const p3p4 = curve(p3, p4, p)
-  const p4p1 = curve(p4, p1, p)
+  const p1p2 = curve(p1, p2, BOX_PRECISION)
+  const p2p3 = curve(p2, p3, BOX_PRECISION)
+  const p3p4 = curve(p3, p4, BOX_PRECISION)
+  const p4p1 = curve(p4, p1, BOX_PRECISION)
   const p4p3 = [...p3p4].reverse()
 
   const startLinePos = linePos
@@ -131,7 +116,7 @@ export const updateBox = box => {
   for (let i = 0; i < p1p2.length; i++) {
     const pi = p1p2[i]
     const co = p4p3[i]
-    const pco = curve(pi, co, p)
+    const pco = curve(pi, co, BOX_PRECISION)
     const len = pco.length
     const startPos = pos
     for (let j = 0; j < pco.length; j++) {
@@ -153,15 +138,37 @@ export const updateBox = box => {
   mesh.geometry.setDrawRange(0, index.length)
   mesh.geometry.attributes.position.needsUpdate = true
   // mesh.geometry.computeVertexNormals()
-  // mesh.geometry.computeBoundingSphere()
+  mesh.geometry.computeBoundingSphere()
 
   line.geometry.setIndex(lineIndex)
   line.geometry.setDrawRange(0, lineIndex.length)
   line.geometry.attributes.position.needsUpdate = true
-  // line.geometry.computeBoundingSphere()
+  line.geometry.computeBoundingSphere()
 
   line.material.color = box.selected
     ? new Color('#ff0000')
     : new Color('#000000')
   line.material.needsUpdate = true
+}
+
+export const addBox = (boxes, scene, box) => {
+  createBox(box)
+  scene.add(box.mesh)
+  scene.add(box.line)
+  boxes.push(box)
+}
+
+export const removeBox = (boxes, scene, box) => {
+  scene.remove(box.mesh)
+  scene.remove(box.line)
+  boxes.splice(boxes.indexOf(box), 1)
+}
+
+export const changeBoxText = (scene, box, text) => {
+  scene.remove(box.mesh)
+  scene.remove(box.line)
+  box.text = text
+  createBox(box)
+  scene.add(box.mesh)
+  scene.add(box.line)
 }

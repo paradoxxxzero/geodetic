@@ -68,3 +68,30 @@ export const initialize3d = () => {
     raycaster,
   }
 }
+
+export const makeTextTexture = text => {
+  const canvas = document.createElement('canvas')
+
+  const fs = 256
+  const ff = 'serif'
+  const margin = 64
+
+  const ctx = canvas.getContext('2d')
+  ctx.font = `${fs}px ${ff}`
+  const metrics = ctx.measureText(text)
+  const width = metrics.width
+  const height = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent
+
+  canvas.width = width + margin * 2
+  canvas.height = height + margin * 2
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+  ctx.font = `${fs}px ${ff}`
+
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillStyle = '#000'
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2)
+  return { canvas, width: canvas.width, height: canvas.height }
+}

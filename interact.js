@@ -1,8 +1,8 @@
 import interact from 'interactjs'
-import { createBox } from './box'
-import { createLink } from './link'
 import { Vector2 } from 'three'
-import { getPoints, curvatureTranslate } from './math'
+import { addBox, removeBox, changeBoxText } from './box'
+import { addLink, removeLink } from './link'
+import { curvatureTranslate, getPoints } from './math'
 
 export const interactions = (
   boxes,
@@ -24,18 +24,18 @@ export const interactions = (
     })
   }
 
-  const select = (x, y, shiftKey, noUnselect) => {
+  const select = (x, y, shiftKey, ctrlKey, noUnselect) => {
     const p = new Vector2()
     p.x = (2 * x) / window.innerWidth - 1
     p.y = 1 - (2 * y) / window.innerHeight
     const selected = boxes.filter(box => box.selected)
 
-    if (!shiftKey && (!noUnselect || selected.length === 1)) {
+    if (!shiftKey && !ctrlKey && (!noUnselect || selected.length === 1)) {
       selected.forEach(box => {
         box.selected = false
       })
     }
-    if (selected.length > 1 && !shiftKey) {
+    if (selected.length > 1 && !(shiftKey || ctrlKey) && noUnselect) {
       return
     }
     raycaster.setFromCamera(p, camera)
@@ -43,7 +43,7 @@ export const interactions = (
       .intersectObjects(boxes.map(box => box.mesh))
       .forEach(({ object }) => {
         const box = boxes.find(box => box.mesh === object)
-        box.selected = true
+        box.selected = ctrlKey ? !box.selected : true
       })
   }
 
@@ -54,13 +54,13 @@ export const interactions = (
       inertia: true,
       listeners: {
         start: e => {
-          select(e.x0, e.y0, e.shiftKey, true)
+          select(e.x0, e.y0, e.shiftKey, e.ctrlKey, true)
           render()
         },
         move: e => {
+          const r = e.ctrlKey ? 0.5 : e.altKey ? 0.25 : 1
           if (!controls.enabled) {
-            const s =
-              (Math.min(window.innerWidth, window.innerHeight) * 0.9) / 4
+            const s = Math.min(window.innerWidth, window.innerHeight) * 0.9 * r
             translate([-e.dx / s, -e.dy / s])
             render()
           }
@@ -69,7 +69,7 @@ export const interactions = (
       },
     })
     .on('tap', e => {
-      select(e.x, e.y, e.shiftKey)
+      select(e.x, e.y, e.shiftKey, e.ctrlKey)
       render()
     })
     .on('doubletap', e => {
@@ -84,33 +84,46 @@ export const interactions = (
       if (intersectBoxes.length) {
         const [{ object }] = intersectBoxes
         const box = boxes.find(box => box.mesh === object)
-
-        box.points = getPoints(box.center, box.width, box.height)
+        const text = prompt(`Text for "${box.text}" box?`)
+        if (!text) {
+          return
+        }
+        changeBoxText(scene, box, text)
       } else {
         raycaster.intersectObject(surface).forEach(({ point }) => {
-          const text = prompt('Text?')
+          const text = prompt('Text for new box?')
           if (!text) {
             return
           }
-          const newBox = {
+          addBox(boxes, scene, {
             text,
             center: [point.x, point.y, point.z],
             color: [Math.random(), Math.random(), Math.random()],
-          }
-          createBox(newBox)
-          scene.add(newBox.mesh)
-          scene.add(newBox.line)
-          boxes.push(newBox)
+          })
         })
       }
       render()
     })
 
   addEventListener('keydown', e => {
-    console.log(e.code)
-    if (e.code === 'Tab') {
+    console.log(e.code, e.key)
+    if (e.key === 'c') {
+      // C -> Toggle control type
       controls.enabled = !controls.enabled
-    } else if (e.code === 'Enter') {
+    } else if (e.key === 'a') {
+      // A -> Select all boxes
+      boxes.forEach(box => {
+        box.selected = true
+      })
+      render()
+    } else if (e.code === 'Escape') {
+      // Escape -> Unselect all boxes
+      boxes.forEach(box => {
+        box.selected = false
+      })
+      render()
+    } else if (e.key === 'l') {
+      // L -> Link all selected boxes
       const selected = boxes.filter(box => box.selected)
 
       if (selected.length > 1) {
@@ -123,25 +136,34 @@ export const interactions = (
           }
           return acc
         }, [])
-        pairs.forEach(pair => {
-          const newLink = { boxes: pair }
-          createLink(newLink)
-          scene.add(newLink.line)
-          links.push(newLink)
-        })
+        pairs.forEach(pair => addLink(links, scene, { boxes: pair }))
         render()
       }
-    } else if (e.code === 'Delete') {
+    } else if (e.key === 'u') {
+      // U -> Unlink all selected boxes
+      const selected = boxes.filter(box => box.selected)
+
+      if (selected.length > 1) {
+        links
+          .filter(link => link.boxes.every(box => selected.includes(box)))
+          .forEach(link => removeLink(links, scene, link))
+        render()
+      }
+    } else if (e.key === 'r') {
+      // R -> Reset boxes orientation
       const selected = boxes.filter(box => box.selected)
       selected.forEach(box => {
-        const removedLinks = links.filter(link => link.boxes.includes(box))
-        removedLinks.forEach(link => {
-          scene.remove(link.line)
-          links.splice(links.indexOf(link), 1)
-        })
-        scene.remove(box.mesh)
-        scene.remove(box.line)
-        boxes.splice(boxes.indexOf(box), 1)
+        box.points = getPoints(box.center, box.width, box.height)
+      })
+      render()
+    } else if (e.code === 'Delete') {
+      // Delete -> Remove all selected boxes (and links)
+      const selected = boxes.filter(box => box.selected)
+      selected.forEach(box => {
+        links
+          .filter(link => link.boxes.includes(box))
+          .forEach(link => removeLink(links, scene, link))
+        removeBox(boxes, scene, box)
       })
       render()
     }
