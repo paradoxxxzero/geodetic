@@ -1,10 +1,10 @@
 {
-  "name": "revival",
+  "name": "Geodetic",
   "private": true,
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && touch docs/.nojekyll",
     "preview": "vite preview"
   },
   "devDependencies": {
