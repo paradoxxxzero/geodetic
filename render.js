@@ -134,7 +134,7 @@ export const reset = () => {
   })
 
   boxes.forEach(box => {
-    box.center = xy(box.center)
+    box.center[2] = xy(box.center)[2]
   })
   set()
 }

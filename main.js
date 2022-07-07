@@ -28,6 +28,6 @@ const size = () => {
 }
 
 window.ondeviceorientation = window.onresize = size
-size()
+// size()
 
 interactions()

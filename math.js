@@ -7,21 +7,21 @@ export const setCurvature = c => {
 // z = 1
 // x² + y² + z² = 1
 
-const project = ([x, y, z]) => {
+export const project = ([x, y, z]) => {
   const nr = 2 / (1 + z)
   return [x * nr, y * nr]
 }
 
-const unproject = ([x, y]) => {
+export const unproject = ([x, y]) => {
   x *= 0.5
   y *= 0.5
   const nr = 2 / (1 + x * x + y * y)
-  return [-x * nr, y * nr, nr - 1]
+  return [x * nr, y * nr, nr - 1]
 }
 
 export const xy = ([x, y]) =>
   curvature > 0
-    ? unproject([x, y])
+    ? unproject([-x, y])
     : curvatureTranslate(
         [0, 0, 1],
         [-x, y, curvature < 0 ? Math.sqrt(x * x + y * y + 1) : 1]
@@ -69,8 +69,8 @@ export const curvatureTranslate = (vertex, offset) => {
 }
 
 export const getPoints = (center, width, height) => {
-  const w2 = (-curvature * width) / 2
-  const h2 = (-curvature * height) / 2
+  const w2 = ((curvature > 0 ? -1 : 1) * width) / 2
+  const h2 = ((curvature > 0 ? -1 : 1) * height) / 2
 
   return [
     curvatureTranslate(xy([w2, h2]), center),
@@ -192,6 +192,7 @@ const ellipticRotate = (vertex, offset) => {
   vertex[0] = a * cxt + b * xt
   vertex[1] = ye * cyt - ze * yt
   vertex[2] = -a * xt + b * cxt
+  return vertex
 }
 
 const parabolicTranslate = (vertex, offset) => {
@@ -201,28 +202,60 @@ const parabolicTranslate = (vertex, offset) => {
   vertex[0] = xe + xt
   vertex[1] = ye + yt
   vertex[2] = 1
+  return vertex
 }
 
 export const dot = ([xa, ya, za], [xb, yb, zb], c = curvature) =>
   xa * xb + ya * yb + c * za * zb
 
-const t2s = (t, uv) => Math.sqrt(t * t * (uv * uv - 1) + 1) - curvature * uv * t
-
-export const curve = (u, v, curveStep) => {
+export const slerp = (u, v, step) => {
+  const o = Math.acos(dot(u, v))
+  const n = Math.sin(o)
+  if (n === 0) {
+    return [u, v]
+  }
   const vertices = [u]
-  if (curvature) {
-    const uv = dot(u, v)
-    for (let t = 1 - curveStep; t > 0; t -= curveStep) {
-      const s = t2s(t, uv)
-      vertices.push([
-        u[0] * t + v[0] * s,
-        u[1] * t + v[1] * s,
-        u[2] * t + v[2] * s,
-      ])
-    }
+  for (let i = step; i < 1; i += step) {
+    const a = Math.sin((1 - i) * o) / n
+    const b = Math.sin(i * o) / n
+    vertices.push([
+      u[0] * a + v[0] * b,
+      u[1] * a + v[1] * b,
+      u[2] * a + v[2] * b,
+    ])
   }
   vertices.push(v)
   return vertices
+}
+
+export const hlerp = (u, v, step) => {
+  const o = Math.acosh(-dot(u, v))
+  const n = Math.sinh(o)
+  if (n === 0) {
+    return [u, v]
+  }
+  const vertices = [u]
+  for (let i = step; i < 1; i += step) {
+    const a = Math.sinh((1 - i) * o) / n
+    const b = Math.sinh(i * o) / n
+    vertices.push([
+      u[0] * a + v[0] * b,
+      u[1] * a + v[1] * b,
+      u[2] * a + v[2] * b,
+    ])
+  }
+  vertices.push(v)
+  return vertices
+}
+
+export const curve = (u, v, curveStep, c = curvature) => {
+  if (curvature > 0) {
+    return slerp(u, v, curveStep)
+  } else if (curvature < 0) {
+    return hlerp(u, v, curveStep)
+  } else {
+    return [u, v]
+  }
 }
 
 // export const project = ([x, y, z]) => [x / (1 + z), y / (1 + z)]

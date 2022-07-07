@@ -10,12 +10,12 @@ import { curve } from './math'
 import { scene } from './render'
 import { links } from './objects'
 
-const LINK_PRECISION = 1 / 500
+const LINK_PRECISION = 1 / 100
 
 export const createLink = link => {
   const n = curve(
     link.boxes[0].center,
-    link.boxes[0].center,
+    link.boxes[1].center,
     LINK_PRECISION
   ).length
 

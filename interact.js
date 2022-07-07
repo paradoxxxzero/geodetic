@@ -34,12 +34,13 @@ export const interactions = () => {
       return
     }
     raycaster.setFromCamera(p, camera)
-    raycaster
-      .intersectObjects(boxes.map(box => box.mesh))
-      .forEach(({ object }) => {
-        const box = boxes.find(box => box.mesh === object)
-        box.selected = ctrlKey ? !box.selected : true
-      })
+    const intersections = raycaster.intersectObjects(boxes.map(box => box.mesh))
+    if (intersections.length) {
+      const [{ object }] = intersections
+
+      const box = boxes.find(box => box.mesh === object)
+      box.selected = ctrlKey ? !box.selected : true
+    }
   }
 
   controls.enabled = false
@@ -89,7 +90,7 @@ export const interactions = () => {
       if (intersectBoxes.length) {
         const [{ object }] = intersectBoxes
         const box = boxes.find(box => box.mesh === object)
-        const text = prompt(`Text for "${box.text}" box?`)
+        const text = prompt(`Text for "${box.text}" box?`, box.text)
         if (!text) {
           return
         }

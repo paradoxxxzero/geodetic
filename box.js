@@ -14,7 +14,7 @@ import { curve, getPoints } from './math'
 import { makeTextTexture, scene } from './render'
 import { boxes } from './objects'
 
-const BOX_PRECISION = 1 / 20
+const BOX_PRECISION = 1 / 100
 
 export const createBox = box => {
   const { canvas, width, height } = makeTextTexture(box.text)
@@ -31,7 +31,7 @@ export const createBox = box => {
   const p3p4 = curve(p3, p4, BOX_PRECISION)
   const p4p1 = curve(p4, p1, BOX_PRECISION)
   const p4p3 = [...p3p4].reverse()
-  const nb = p1p2.concat(p2p3).concat(p3p4).concat(p4p1).length + 1
+  const nb = p1p2.concat(p2p3).concat(p3p4).concat(p4p1).length
   const n = p1p2
     .map((pi, i) => curve(pi, p4p3[i], BOX_PRECISION).length)
     .reduce((a, b) => a + b, 0)
@@ -59,8 +59,8 @@ export const createBox = box => {
     side: DoubleSide,
     color: new Color().fromArray(box.color),
     map: new CanvasTexture(canvas),
-    transparent: true,
-    opacity: 0.5,
+    // transparent: true,
+    // opacity: 0.5,
     // wireframe: true,
   })
   material.map.needsUpdate = true
