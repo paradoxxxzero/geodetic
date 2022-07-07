@@ -9,7 +9,7 @@ export const setCurvature = c => {
 
 export const project = ([x, y, z]) => {
   const nr = 2 / (1 + z)
-  return [x * nr, y * nr]
+  return [-x * nr, y * nr]
 }
 
 export const unproject = ([x, y]) => {
@@ -249,9 +249,9 @@ export const hlerp = (u, v, step) => {
 }
 
 export const curve = (u, v, curveStep, c = curvature) => {
-  if (curvature > 0) {
+  if (c > 0) {
     return slerp(u, v, curveStep)
-  } else if (curvature < 0) {
+  } else if (c < 0) {
     return hlerp(u, v, curveStep)
   } else {
     return [u, v]

@@ -164,8 +164,9 @@ export const interactions = () => {
       render()
     } else if (e.key === 'v') {
       // V -> Change curvature -1 -> 0 -> 1 -> -1
+      const oldCurvature = curvature
       setCurvature(curvature === -1 ? 0 : curvature === 0 ? 1 : -1)
-      reset()
+      reset(oldCurvature)
       render()
     } else if (e.code === 'Delete') {
       // Delete -> Remove all selected boxes (and links)

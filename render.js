@@ -12,7 +12,7 @@ import { createLink, updateLink } from './link'
 import { boxes, links } from './objects'
 import './style.css'
 import { createSurface, surface } from './surface'
-import { xy } from './math'
+import { xy, normalize, project, curvature } from './math'
 
 export let renderer, camera, scene, raycaster, controls
 
@@ -122,7 +122,8 @@ export const set = () => {
     scene.add(link.line)
   })
 }
-export const reset = () => {
+
+export const reset = oldCurvature => {
   scene.remove(surface)
   boxes.forEach(box => {
     scene.remove(box.mesh)
@@ -134,7 +135,13 @@ export const reset = () => {
   })
 
   boxes.forEach(box => {
-    box.center[2] = xy(box.center)[2]
+    if (oldCurvature > 0) {
+      box.center = project(box.center)
+    }
+    if (curvature >= 0) {
+      box.center[0] *= -1
+    }
+    box.center = normalize(xy(box.center))
   })
   set()
 }
