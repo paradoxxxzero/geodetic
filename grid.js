@@ -1,17 +1,10 @@
 import {
-  MeshLambertMaterial,
-  DoubleSide,
   BufferGeometry,
-  BufferAttribute,
-  Mesh,
-  SphereGeometry,
-  PlaneGeometry,
-  LineBasicMaterial,
-  StreamDrawUsage,
-  LineSegments,
   Float32BufferAttribute,
+  LineBasicMaterial,
+  LineSegments,
 } from 'three'
-import { curvature, xy, curve, slerp2 } from './math'
+import { curvature, curve, xy } from './math'
 
 export let grid
 
@@ -21,11 +14,10 @@ export const createGrid = () => {
   const spacing = curvature < 0 ? 6 : 0.129
   const geometry = new BufferGeometry()
   const material = new LineBasicMaterial({
-    side: DoubleSide,
     color: 0x0099ff,
     transparent: true,
-    opacity: 0.15,
-    linewidth: 2,
+    opacity: 0.25,
+    linewidth: 1,
   })
   const positions = []
   const index = []
@@ -88,7 +80,7 @@ export const createGrid = () => {
   geometry.attributes.position.needsUpdate = true
   geometry.computeBoundingSphere()
   grid = new LineSegments(geometry, material)
-  grid.visible = true
+  grid.visible = false
   if (curvature > 0) {
     grid.scale.set(1.02, 1.02, 1.02)
   } else if (curvature < 0) {

@@ -31,7 +31,7 @@ export const createLink = link => {
   })
 
   const line = new LineSegments(geometry, material)
-  line.scale.set(1.005, 1.005, 1.005)
+  line.scale.set(1.09, 1.09, 1.09)
 
   link.line = line
   updateLink(link)
