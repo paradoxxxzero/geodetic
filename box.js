@@ -116,12 +116,6 @@ export const updateBox = box => {
   }
   lineIndex.push(linePos - 1, startLinePos)
 
-  // linePositions[linePos * 3] = center[0]
-  // linePositions[linePos * 3 + 1] = center[1]
-  // linePositions[linePos * 3 + 2] = center[2]
-
-  // lineIndex.push(startLinePos, linePos)
-
   for (let i = 0; i < p1p2.length; i++) {
     const pi = p1p2[i]
     const co = p4p3[i]

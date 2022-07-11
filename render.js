@@ -4,6 +4,8 @@ import {
   Raycaster,
   Scene,
   WebGLRenderer,
+  AmbientLight,
+  PointLight,
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
@@ -13,6 +15,7 @@ import { boxes, links } from './objects'
 import './style.css'
 import { createSurface, surface } from './surface'
 import { xy, normalize, project, curvature } from './math'
+import { createGrid, grid } from './grid'
 
 export let renderer, camera, scene, raycaster, controls
 
@@ -45,13 +48,13 @@ export const initialize3d = () => {
   scene = new Scene()
   scene.background = new Color(0xffffff)
 
-  // const ambientLight = new AmbientLight(0xffffff)
-  // scene.add(ambientLight)
+  const ambientLight = new AmbientLight(0xffffff)
+  scene.add(ambientLight)
 
-  // const pointLight = new PointLight(0xffffff, 1)
-  // // pointLight.position.set(2, 2, 2)
-  // camera.add(pointLight)
-  // camera.updateProjectionMatrix()
+  const pointLight = new PointLight(0xffffff, 1)
+  // pointLight.position.set(2, 2, 2)
+  camera.add(pointLight)
+  camera.updateProjectionMatrix()
 
   scene.add(camera)
 
@@ -111,6 +114,8 @@ export const update = () => {
 export const set = () => {
   createSurface()
   scene.add(surface)
+  createGrid()
+  scene.add(grid)
   boxes.forEach(box => {
     createBox(box)
     scene.add(box.mesh)
@@ -124,7 +129,14 @@ export const set = () => {
 }
 
 export const reset = oldCurvature => {
+  const visibility = {
+    surface: surface.visible,
+    grid: grid.visible,
+  }
+  console.log(visibility)
+
   scene.remove(surface)
+  scene.remove(grid)
   boxes.forEach(box => {
     scene.remove(box.mesh)
     scene.remove(box.line)
@@ -141,9 +153,11 @@ export const reset = oldCurvature => {
     if (curvature >= 0) {
       box.center[0] *= -1
     }
-    box.center = normalize(xy(box.center))
+    box.center = xy(box.center)
   })
   set()
+  surface.visible = visibility.surface
+  grid.visible = visibility.grid
 }
 
 window.render = render

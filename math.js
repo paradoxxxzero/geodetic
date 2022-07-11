@@ -1,4 +1,8 @@
-export let curvature = -1
+export let curvature = location.search.includes('spheric')
+  ? 1
+  : location.search.includes('euclidean')
+  ? 0
+  : -1
 
 export const setCurvature = c => {
   curvature = c
@@ -7,41 +11,11 @@ export const setCurvature = c => {
 // z = 1
 // x² + y² + z² = 1
 
-export const project = ([x, y, z]) => {
-  const nr = 2 / (1 + z)
-  return [-x * nr, y * nr]
-}
-
-export const unproject = ([x, y]) => {
-  x *= 0.5
-  y *= 0.5
-  const nr = 2 / (1 + x * x + y * y)
-  return [x * nr, y * nr, nr - 1]
-}
-
 export const xy = ([x, y]) =>
-  curvature > 0
-    ? unproject([-x, y])
-    : curvatureTranslate(
-        [0, 0, 1],
-        [-x, y, curvature < 0 ? Math.sqrt(x * x + y * y + 1) : 1]
-      )
-
-export const normalize = ([x, y, z], c = curvature) => {
-  if (c === 0) {
-    return [x / z, y / z, 1]
-  }
-  let nr = c * x * x + c * y * y + z * z
-  if (nr === 0) {
-    return [0, 0, 1]
-  }
-  if (c < 0 && nr < 0) {
-    // This is not necessary but prevent some crashes when normalizing wythoff
-    nr *= -1
-  }
-  const k = (c === -1 ? Math.sign(z) || 1 : 1) / Math.sqrt(nr)
-  return [x * k, y * k, z * k]
-}
+  curvatureTranslate(
+    [0, 0, 1],
+    [-x, y, curvature < 0 ? Math.sqrt(x * x + y * y + 1) : 1]
+  )
 
 // export const curvatureTranslate = (vertex, offset) => {
 //   for (let i = 0; i < 100; i++) {
@@ -208,8 +182,11 @@ const parabolicTranslate = (vertex, offset) => {
 export const dot = ([xa, ya, za], [xb, yb, zb], c = curvature) =>
   xa * xb + ya * yb + c * za * zb
 
-export const slerp = (u, v, step) => {
-  const o = Math.acos(dot(u, v))
+export const slerp = (u, v, step, reverse) => {
+  let o = Math.acos(dot(u, v))
+  if (reverse) {
+    o = 2 * Math.PI - o
+  }
   const n = Math.sin(o)
   if (n === 0) {
     return [u, v]
@@ -227,6 +204,51 @@ export const slerp = (u, v, step) => {
   vertices.push(v)
   return vertices
 }
+
+export const slerp2 = (u, v, step) => {
+  const o = 2 * Math.PI - Math.acos(dot(u, v))
+  const n = Math.sin(o)
+  if (n === 0) {
+    return [u, v]
+  }
+  const vertices = [u]
+  for (let i = step; i < 1; i += step) {
+    const a = Math.sin((1 - i) * o) / n
+    const b = Math.sin(i * o) / n
+    vertices.push([
+      u[0] * a + v[0] * b,
+      u[1] * a + v[1] * b,
+      u[2] * a + v[2] * b,
+    ])
+  }
+  vertices.push(v)
+  return vertices
+}
+// export const slerp2 = (u, v, step) => {
+//   const o = Math.acos(dot(u, v))
+//   const n = Math.sin(o)
+//   if (n === 0) {
+//     return [u, v]
+//   }
+//   const vertices = [u]
+//   const d = dot(u, v)
+//   const w = [v[0] - d * u[0], v[1] - d * u[1], v[2] - d * u[2]]
+//   const nr = Math.sqrt(w[0] * w[0] + w[1] * w[1] + w[2] * w[2])
+//   w[0] /= nr
+//   w[1] /= nr
+//   w[2] /= nr
+//   for (let i = step; i < 2 * Math.PI; i += step) {
+//     const a = Math.cos(i)
+//     const b = Math.sin(i)
+//     vertices.push([
+//       u[0] * a + w[0] * b,
+//       u[1] * a + w[1] * b,
+//       u[2] * a + w[2] * b,
+//     ])
+//   }
+//   vertices.push(v)
+//   return vertices
+// }
 
 export const hlerp = (u, v, step) => {
   const o = Math.acosh(-dot(u, v))
@@ -248,16 +270,43 @@ export const hlerp = (u, v, step) => {
   return vertices
 }
 
-export const curve = (u, v, curveStep, c = curvature) => {
+export const curve = (u, v, curveStep, c = curvature, reverse = false) => {
   if (c > 0) {
-    return slerp(u, v, curveStep)
+    return slerp(u, v, curveStep, reverse)
   } else if (c < 0) {
-    return hlerp(u, v, curveStep)
+    return hlerp(u, v, curveStep, reverse)
   } else {
     return [u, v]
   }
 }
 
+// Unused
+export const project = ([x, y, z]) => {
+  const nr = 2 / (1 + z)
+  return [-x * nr, y * nr]
+}
+
+export const unproject = ([x, y]) => {
+  x *= 0.5
+  y *= 0.5
+  const nr = 2 / (1 + x * x + y * y)
+  return [x * nr, y * nr, nr - 1]
+}
+export const normalize = ([x, y, z], c = curvature) => {
+  if (c === 0) {
+    return [x / z, y / z, 1]
+  }
+  let nr = c * x * x + c * y * y + z * z
+  if (nr === 0) {
+    return [0, 0, 1]
+  }
+  if (c < 0 && nr < 0) {
+    // This is not necessary but prevent some crashes when normalizing wythoff
+    nr *= -1
+  }
+  const k = (c === -1 ? Math.sign(z) || 1 : 1) / Math.sqrt(nr)
+  return [x * k, y * k, z * k]
+}
 // export const project = ([x, y, z]) => [x / (1 + z), y / (1 + z)]
 window.project = project
 window.unproject = unproject

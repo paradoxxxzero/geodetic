@@ -6,6 +6,7 @@ import { curvatureRotate, getPoints, setCurvature, curvature } from './math'
 import { camera, controls, raycaster, render, reset } from './render'
 import { boxes, links } from './objects'
 import { surface } from './surface'
+import { grid } from './grid'
 
 export const interactions = () => {
   const rotate = d => {
@@ -167,6 +168,14 @@ export const interactions = () => {
       const oldCurvature = curvature
       setCurvature(curvature === -1 ? 0 : curvature === 0 ? 1 : -1)
       reset(oldCurvature)
+      render()
+    } else if (e.key === 'g') {
+      // G -> Toggle grid display
+      grid.visible = !grid.visible
+      render()
+    } else if (e.key === 's') {
+      // S -> Toggle surface display
+      surface.visible = !surface.visible
       render()
     } else if (e.code === 'Delete') {
       // Delete -> Remove all selected boxes (and links)
