@@ -14,7 +14,7 @@ import { curve, getPoints } from './math'
 import { makeTextTexture, scene } from './render'
 import { boxes } from './objects'
 
-const BOX_PRECISION = 1 / 100
+const BOX_PRECISION = 1 / 25
 
 export const createBox = box => {
   const { canvas, width, height } = makeTextTexture(box.text)
@@ -59,6 +59,7 @@ export const createBox = box => {
     side: DoubleSide,
     color: new Color().fromArray(box.color),
     map: new CanvasTexture(canvas),
+    // wireframe: true,
   })
   material.map.needsUpdate = true
   const lineMaterial = new LineBasicMaterial({

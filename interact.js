@@ -111,9 +111,29 @@ export const interactions = () => {
       }
       render()
     })
+    .on('hold', e => {
+      // TODO: refactor
+      if (e.y > window.innerHeight * 0.5) {
+        if (e.x > window.innerHeight * 0.5) {
+          const oldCurvature = curvature
+          setCurvature(curvature === -1 ? 0 : curvature === 0 ? 1 : -1)
+          reset(oldCurvature)
+          render()
+        } else {
+          controls.enabled = !controls.enabled
+        }
+      } else {
+        if (e.x > window.innerHeight * 0.5) {
+          grid.visible = !grid.visible
+          render()
+        } else {
+          surface.visible = !surface.visible
+          render()
+        }
+      }
+    })
 
   addEventListener('keydown', e => {
-    console.log(e.code, e.key)
     if (e.key === 'c') {
       // C -> Toggle control type
       controls.enabled = !controls.enabled

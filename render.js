@@ -135,7 +135,6 @@ export const reset = oldCurvature => {
     surface: surface.visible,
     grid: grid.visible,
   }
-  console.log(visibility)
 
   scene.remove(surface)
   scene.remove(grid)
