@@ -26,8 +26,6 @@ export const createLink = link => {
     new BufferAttribute(positions, 3).setUsage(StreamDrawUsage)
   )
   const material = new LineBasicMaterial({
-    transparent: true,
-    opacity: 0.9,
     linewidth: 4,
     color: new Color('#000000'),
   })

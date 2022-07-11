@@ -59,14 +59,9 @@ export const createBox = box => {
     side: DoubleSide,
     color: new Color().fromArray(box.color),
     map: new CanvasTexture(canvas),
-    // transparent: true,
-    // opacity: 0.5,
-    // wireframe: true,
   })
   material.map.needsUpdate = true
   const lineMaterial = new LineBasicMaterial({
-    transparent: true,
-    opacity: 0.9,
     linewidth: 4,
     color: new Color('#000000'),
   })

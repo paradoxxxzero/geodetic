@@ -3,7 +3,7 @@ import { Vector2 } from 'three'
 import { addBox, removeBox, changeBoxText } from './box'
 import { addLink, removeLink } from './link'
 import { curvatureRotate, getPoints, setCurvature, curvature } from './math'
-import { camera, controls, raycaster, render, reset } from './render'
+import { camera, controls, raycaster, render, reset, scene } from './render'
 import { boxes, links } from './objects'
 import { surface } from './surface'
 import { grid } from './grid'
@@ -176,6 +176,11 @@ export const interactions = () => {
     } else if (e.key === 's') {
       // S -> Toggle surface display
       surface.visible = !surface.visible
+      render()
+    } else if (e.key === 'f') {
+      // F -> Toggle fog
+      scene.fog.near = scene.fog.far ? 0.1 : 1
+      scene.fog.far = scene.fog.far ? 0 : 40
       render()
     } else if (e.code === 'Delete') {
       // Delete -> Remove all selected boxes (and links)

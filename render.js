@@ -6,6 +6,7 @@ import {
   WebGLRenderer,
   AmbientLight,
   PointLight,
+  Fog,
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
@@ -14,7 +15,7 @@ import { createLink, updateLink } from './link'
 import { boxes, links } from './objects'
 import './style.css'
 import { createSurface, surface } from './surface'
-import { xy, normalize, project, curvature } from './math'
+import { xy, project, curvature } from './math'
 import { createGrid, grid } from './grid'
 
 export let renderer, camera, scene, raycaster, controls
@@ -48,6 +49,7 @@ export const initialize3d = () => {
   scene = new Scene()
   scene.background = new Color(0xffffff)
 
+  scene.fog = new Fog(0xffffff, 0.1, 0)
   const ambientLight = new AmbientLight(0xffffff)
   scene.add(ambientLight)
 

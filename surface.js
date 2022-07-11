@@ -7,7 +7,7 @@ import {
   SphereGeometry,
   PlaneGeometry,
 } from 'three'
-import { curvature, xy } from './math'
+import { curvature } from './math'
 
 export let surface
 
@@ -18,8 +18,7 @@ export const createSurface = () => {
     side: DoubleSide,
     color: 0x0044ff,
     transparent: true,
-    opacity: 0.5,
-    // wireframe: true,
+    opacity: 0.1,
   })
 
   if (curvature > 0) {
